@@ -1,0 +1,65 @@
+version: '3.8'
+
+services:
+
+  mysql:
+    image: mysql:latest
+    cap_add:
+      - SYS_NICE  # CAP_SYS_NICE
+    restart: always
+    environment:
+      - MYSQL_ROOT_PASSWORD=root123
+      - MYSQL_DATABASE=complain_app_db
+      - MYSQL_USER=app_user
+      - MYSQL_PASSWORD=test123
+    ports:
+      - "3306"
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      - microservices-network-exc
+
+  complain-eureka-server:
+    image: complain-eureka-server
+    build:
+      #complain-microservices
+      context: ./complain-eureka-server
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - "8761:8761"
+    networks:
+      - microservices-network-exc
+
+  complain-users-service:
+    image: complain-users-service
+    build:
+      context: ./complain-users-service
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - "8100:8100"
+    depends_on:
+      - complain-eureka-server
+    networks:
+      - microservices-network-exc
+
+  complain-main-service:
+    image: complain-main-service
+    build:
+      context: ./complain-main-service
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - "8101:8101"
+    depends_on:
+      - complain-eureka-server
+      - complain-users-service
+    networks:
+      - microservices-network-exc
+
+networks:
+  microservices-network-exc:
+
+volumes:
+  db_data: {}
